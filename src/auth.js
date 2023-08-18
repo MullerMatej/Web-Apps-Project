@@ -45,7 +45,7 @@ export default {
             (await bcrypt.compare(password, user.password))
         ) {
             delete user.password;
-            let token = jwt.sign(user, "tajna", {
+            let token = jwt.sign(user, process.env.JWT_SECRET, {
                 algorithm: "HS512",
                 expiresIn: "1 week",
             });
@@ -55,6 +55,23 @@ export default {
             };
         } else {
             throw new Error("Cannot authenticate");
+        }
+    },
+    verify(req, res, next) {
+        // next poziva sljedecu middleware funkciju, mora biti pozvan
+        try {
+            let authorization = req.headers.authorization.split(" ");
+            let type = authorization[0]; // bearer tip tokena
+            let token = authorization[1]; // token
+
+            if (type !== "Bearer") {
+                return res.status(401).send();
+            } else {
+                req.jtw = jwt.verify(token, process.env.JWT_SECRET);
+                return next();
+            }
+        } catch (e) {
+            return res.status(401).send(); // 401 Unauthorized
         }
     },
 };

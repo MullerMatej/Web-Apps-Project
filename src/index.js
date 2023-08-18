@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import { ObjectId } from "mongodb";
@@ -10,6 +13,10 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+app.get("/tajna", [auth.verify], (req, res) => {
+    res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
+});
+
 app.post("/auth", async (req, res) => {
     let user = req.body;
 
@@ -17,7 +24,7 @@ app.post("/auth", async (req, res) => {
         let result = await auth.authenticateUser(user.username, user.password);
         res.json(result);
     } catch (e) {
-        res.status(403).json({ error: e.message });
+        res.status(401).json({ error: e.message });
     }
 });
 
