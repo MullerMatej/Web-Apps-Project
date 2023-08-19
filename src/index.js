@@ -1,11 +1,11 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
-import express from "express";
-import cors from "cors";
-import { ObjectId } from "mongodb";
-import auth from "./auth.js";
-import connect from "./db.js";
+import express from 'express';
+import cors from 'cors';
+import { ObjectId } from 'mongodb';
+import auth from './auth.js';
+import connect from './db.js';
 
 const app = express();
 const port = 3000;
@@ -13,11 +13,11 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-app.get("/tajna", [auth.verify], (req, res) => {
+app.get('/tajna', [auth.verify], (req, res) => {
     res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
 });
 
-app.post("/auth", async (req, res) => {
+app.post('/auth', async (req, res) => {
     let user = req.body;
 
     try {
@@ -28,20 +28,41 @@ app.post("/auth", async (req, res) => {
     }
 });
 
-app.get("/korisnici", async (req, res) => {
+app.patch('/korisnici', [auth.verify], async (req, res) => {
+    let changes = req.body;
+
+    let username = req.jtw.username;
+
+    if (changes.new_password && changes.old_password) {
+        let result = await auth.changeUserPassword(
+            username,
+            changes.old_password,
+            changes.new_password
+        );
+        if (result) {
+            res.status(201).send();
+        } else {
+            res.status(500).json({ error: 'cannot change password' });
+        }
+    } else {
+        res.status(400).json({ error: 'Krivi upit' });
+    }
+});
+
+app.get('/korisnici', async (req, res) => {
     let db = await connect();
-    let kolekcija = db.collection("korisnici");
+    let kolekcija = db.collection('korisnici');
     let cursor = await kolekcija.find();
     let korisnici = await cursor.toArray();
 
     res.json(korisnici);
 });
 
-// Ne znam zasto ne treba connect na bazu, mozda jer je vec spojen na bazu u db.js ?
-app.post("/korisnici", async (req, res) => {
+// Ne znam zasto ne treba connect na bazu, mozda jer je vec spojen na bazu u db.js
+app.post('/korisnici', async (req, res) => {
     let korisnik = req.body;
     let id;
-    let result = "Uspjesno registriran korisnik!";
+    let result = 'Uspjesno registriran korisnik!';
 
     // Varijable unutar try catch nisu dostupne izvan try catch bloka
     try {
@@ -53,43 +74,43 @@ app.post("/korisnici", async (req, res) => {
 });
 
 // Dohvacanje korisnikovih informacija po njegovom MongoDB ID-u
-app.get("/users/:id", async (req, res) => {
+app.get('/users/:id', async (req, res) => {
     const id = req.params.id;
     try {
         const db = await connect();
-        const kolekcija = db.collection("users");
+        const kolekcija = db.collection('users');
 
         const user = await kolekcija.findOne({ _id: new ObjectId(id) });
 
         if (!user) {
-            res.status(404).json({ error: "User not found" });
+            res.status(404).json({ error: 'User not found' });
         } else {
             res.json({ name: user.email }); // Assuming user's name is stored in the 'name' field
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "An error occurred" });
+        res.status(500).json({ error: 'An error occurred' });
     }
 });
 
-app.get("/users", async (req, res) => {
+app.get('/users', async (req, res) => {
     const db = await connect();
-    const kolekcija = db.collection("users");
+    const kolekcija = db.collection('users');
     const cursor = await kolekcija.find();
     const users = await cursor.toArray();
 
     res.json({
-        status: "OK",
+        status: 'OK',
         data: users,
     });
 });
 
-app.post("/users", async (req, res) => {
+app.post('/users', async (req, res) => {
     let doc = req.body;
     console.log(doc);
 
     let db = await connect();
-    let kolekcija = db.collection("users");
+    let kolekcija = db.collection('users');
 
     // Provjeriti, ne slati cijeli dokument nego samo ono sto treba !!!
     let result = kolekcija.insertOne(doc);
@@ -98,13 +119,13 @@ app.post("/users", async (req, res) => {
     res.json({ _id: result.insertedId });
 });
 
-app.get("/orders", async (req, res) => {
+app.get('/orders', async (req, res) => {
     const page = Number(req.query.page);
     const limit = 3;
 
     // NOVO
     const db = await connect();
-    const kolekcija = db.collection("orders");
+    const kolekcija = db.collection('orders');
     const total_count = await kolekcija.count();
     const cursor = await kolekcija
         .find()
@@ -113,7 +134,7 @@ app.get("/orders", async (req, res) => {
     const orders = await cursor.toArray();
 
     res.json({
-        status: "OK",
+        status: 'OK',
         total_count: total_count, // total_count: total_count => total_count
         page, // page: page => page
         count: limit,
@@ -121,12 +142,12 @@ app.get("/orders", async (req, res) => {
     });
 });
 
-app.post("/orders", async (req, res) => {
+app.post('/orders', async (req, res) => {
     let doc = req.body;
     console.log(doc);
 
     let db = await connect();
-    let kolekcija = db.collection("orders");
+    let kolekcija = db.collection('orders');
 
     // Provjeriti, ne slati cijeli dokument nego samo ono sto treba !!!
     let result = kolekcija.insertOne(doc);
