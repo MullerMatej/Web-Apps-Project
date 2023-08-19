@@ -41,6 +41,7 @@ app.get("/korisnici", async (req, res) => {
 app.post("/korisnici", async (req, res) => {
     let korisnik = req.body;
     let id;
+    let result = "Uspjesno registriran korisnik!";
 
     // Varijable unutar try catch nisu dostupne izvan try catch bloka
     try {
@@ -48,7 +49,7 @@ app.post("/korisnici", async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-    res.json({ id: id });
+    res.json({ result });
 });
 
 // Dohvacanje korisnikovih informacija po njegovom MongoDB ID-u

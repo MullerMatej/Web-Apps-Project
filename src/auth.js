@@ -10,6 +10,7 @@ import jwt from "jsonwebtoken";
         .createIndex({ username: 1 }, { unique: true });
 })();
 
+// TRENUTNO RADIM
 export default {
     async registerUser(userData) {
         let db = await connect(); // Potreban await! Profesor se spaja lokalno pa je moguce da mu zato ne treba await
@@ -17,7 +18,8 @@ export default {
         let doc = {
             username: userData.username,
             password: await bcrypt.hash(userData.password, 8),
-            grad: userData.grad,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
         };
         try {
             let result = await db.collection("korisnici").insertOne(doc);
