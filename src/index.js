@@ -3,9 +3,14 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import { ObjectId } from 'mongodb';
+import mongo from 'mongodb';
 import auth from './auth.js';
 import connect from './db.js';
+import walkingRoute from '../models/walkingRoute.js';
+
+import multer from 'multer';
+
+const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 const port = 3000;
@@ -15,6 +20,26 @@ app.use(express.json());
 
 app.get('/tajna', [auth.verify], (req, res) => {
     res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
+});
+
+app.get('/rute', async (req, res) => {
+    let db = await connect();
+
+    let cursor = await db.collection('rute').find();
+    let results = await cursor.toArray(); // Prodi kroz sve rezultate i stavi ih u array
+
+    res.json(results);
+});
+
+app.get('/rute/:id', async (req, res) => {
+    let id = req.params.id;
+    let db = await connect();
+
+    let doc = await db
+        .collection('rute')
+        .findOne({ _id: new mongo.ObjectId(id) });
+    // console.log(doc);
+    res.json(doc);
 });
 
 app.post('/auth', async (req, res) => {
@@ -73,87 +98,23 @@ app.post('/korisnici', async (req, res) => {
     res.json({ result });
 });
 
-// Dohvacanje korisnikovih informacija po njegovom MongoDB ID-u
-app.get('/users/:id', async (req, res) => {
-    const id = req.params.id;
+app.get('/korisnici/:id', async (req, res) => {
+    const korisnikId = req.params.id;
+    const db = await connect();
+
     try {
-        const db = await connect();
-        const kolekcija = db.collection('users');
-
-        const user = await kolekcija.findOne({ _id: new ObjectId(id) });
-
-        if (!user) {
-            res.status(404).json({ error: 'User not found' });
+        const korisnik = await db
+            .collection('korisnici')
+            .findOne({ _id: new mongo.ObjectId(korisnikId) });
+        if (korisnik) {
+            const { firstName, lastName } = korisnik;
+            res.json({ firstName, lastName });
         } else {
-            res.json({ name: user.email }); // Assuming user's name is stored in the 'name' field
+            res.status(404).json({ error: 'Korisnik not found' });
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'An error occurred' });
+        res.status(500).json({ error: 'Internal server error' });
     }
-});
-
-app.get('/users', async (req, res) => {
-    const db = await connect();
-    const kolekcija = db.collection('users');
-    const cursor = await kolekcija.find();
-    const users = await cursor.toArray();
-
-    res.json({
-        status: 'OK',
-        data: users,
-    });
-});
-
-app.post('/users', async (req, res) => {
-    let doc = req.body;
-    console.log(doc);
-
-    let db = await connect();
-    let kolekcija = db.collection('users');
-
-    // Provjeriti, ne slati cijeli dokument nego samo ono sto treba !!!
-    let result = kolekcija.insertOne(doc);
-
-    res.status(200);
-    res.json({ _id: result.insertedId });
-});
-
-app.get('/orders', async (req, res) => {
-    const page = Number(req.query.page);
-    const limit = 3;
-
-    // NOVO
-    const db = await connect();
-    const kolekcija = db.collection('orders');
-    const total_count = await kolekcija.count();
-    const cursor = await kolekcija
-        .find()
-        .limit(limit)
-        .skip(page * limit);
-    const orders = await cursor.toArray();
-
-    res.json({
-        status: 'OK',
-        total_count: total_count, // total_count: total_count => total_count
-        page, // page: page => page
-        count: limit,
-        data: orders,
-    });
-});
-
-app.post('/orders', async (req, res) => {
-    let doc = req.body;
-    console.log(doc);
-
-    let db = await connect();
-    let kolekcija = db.collection('orders');
-
-    // Provjeriti, ne slati cijeli dokument nego samo ono sto treba !!!
-    let result = kolekcija.insertOne(doc);
-
-    res.status(200);
-    res.json({ _id: result.insertedId });
 });
 
 app.listen(port, () => {
