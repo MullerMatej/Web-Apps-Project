@@ -107,8 +107,8 @@ app.get('/korisnici/:id', async (req, res) => {
             .collection('korisnici')
             .findOne({ _id: new mongo.ObjectId(korisnikId) });
         if (korisnik) {
-            const { firstName, lastName } = korisnik;
-            res.json({ firstName, lastName });
+            const { firstName, lastName, username } = korisnik;
+            res.json({ firstName, lastName, username });
         } else {
             res.status(404).json({ error: 'Korisnik not found' });
         }
