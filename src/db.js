@@ -25,3 +25,30 @@ export default async () => {
     }
     return db;
 };
+// import { MongoClient, ServerApiVersion } from 'mongodb';
+
+// const uri =
+//     'mongodb+srv://admin:admin@clusternovi.oayb4ih.mongodb.net/?retryWrites=true&w=majority';
+
+// let client = new MongoClient(uri, {
+//     serverApi: {
+//         version: ServerApiVersion.v1,
+//         strict: true,
+//         deprecationErrors: true,
+//     },
+// });
+
+// let db = null;
+
+// function isConnected() {
+//     return !!client && !!client.topology && client.topology.isConnected();
+// }
+
+// export default async (databaseName = 'walk_it') => {
+//     if (!db || !isConnected()) {
+//         await client.connect();
+//         db = client.db(databaseName);
+//         console.log('Connected to database: ' + databaseName);
+//     }
+//     return db;
+// };
