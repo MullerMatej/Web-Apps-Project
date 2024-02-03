@@ -11,11 +11,11 @@ import jwt from 'jsonwebtoken';
 export default {
 	async registerUser(userData) {
 		let db = await connect(); // Potreban await! Profesor se spaja lokalno pa je moguce da mu zato ne treba await
-
 		let doc = {
 			username: userData.username,
 			email: userData.email,
 			password: await bcrypt.hash(userData.password, 8),
+			imageUrl: userData.imageUrl,
 		};
 		try {
 			let result = await db.collection('korisnici').insertOne(doc);
@@ -24,7 +24,7 @@ export default {
 			}
 		} catch (e) {
 			if (e.code == 11000) {
-				throw new Error('Korisnik vec postoji!');
+				throw new Error('User already exists');
 			}
 		}
 	},

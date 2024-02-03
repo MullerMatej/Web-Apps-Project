@@ -1,19 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
-
 import express from 'express';
 import cors from 'cors';
 import mongo from 'mongodb';
 import auth from './auth.js';
 import connect from './db.js';
 import connectToDatabase from './db.js';
-
-import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import mongoose from 'mongoose';
-import Image from '../models/Image.js';
-import Route from '../models/route.js';
 
 mongoose.connect('mongodb+srv://admin:admin@clusternovi.oayb4ih.mongodb.net/walk_it', {
 	useNewUrlParser: true,
@@ -31,50 +26,6 @@ app.use(express.json());
 
 app.use(express.static('public'));
 app.use(express.static('uploads'));
-
-// Ureduje nacin na koji multer sprema fajlove
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		cb(null, 'uploads');
-	},
-	filename: (req, file, cb) => {
-		const ext = path.extname(file.originalname);
-		const id = uuidv4();
-		const filePath = `images/${id}${ext}`;
-		Image.create({ filePath }).then(() => {
-			cb(null, filePath); // unique id + originalno ime fajla
-		});
-	},
-});
-const upload = multer({ storage });
-
-app.post('/upload', upload.array('avatar'), (req, res) => {
-	return res.redirect('/');
-});
-
-app.get('/images', (req, res) => {
-	Image.find().then((images) => {
-		return res.json({ images });
-	});
-});
-
-// app.get('/images', async (req, res) => {
-//     let db = await connect();
-
-//     let cursor = await db.collection('images').find();
-//     let results = await cursor.toArray(); // Prodi kroz sve rezultate i stavi ih u array
-
-//     res.json(results);
-// });
-
-app.get('/image', async (req, res) => {
-	let db = await connect();
-
-	let cursor = await db.collection('images').find();
-	let results = await cursor.toArray(); // Prodi kroz sve rezultate i stavi ih u array
-
-	res.json(results);
-});
 
 // Handle the root path and serve the 'index.html' file
 app.get('/', (req, res) => {
@@ -120,6 +71,19 @@ app.get('/lokalniStorage', [auth.verify], async (req, res) => {
 	res.json(username);
 });
 
+app.get('/avatars', async (req, res) => {
+	let db = await connect();
+
+	try {
+		let cursor = await db.collection('avatars').find();
+		let results = await cursor.toArray();
+
+		res.json(results);
+	} catch (error) {
+		res.status(500).json({ error: 'Unable to get avatars' });
+	}
+});
+
 app.patch('/korisnici', [auth.verify], async (req, res) => {
 	let changes = req.body;
 
@@ -156,6 +120,25 @@ app.patch('/korisnici/:username', async (req, res) => {
 	}
 });
 
+app.patch('/updateImage/:username', async (req, res) => {
+	const updates = req.body;
+	const db = await connect();
+
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $set: updates })
+			.then((result) => {
+				res.status(200).json(result);
+			})
+			.catch((error) => {
+				res.status(500).json({ error: 'Cannot update user image' });
+			});
+	} catch (error) {
+		res.status(500).json({ error: 'Invalid user id while changing image' });
+	}
+});
+
 app.get('/korisnici', async (req, res) => {
 	let db = await connect();
 	let kolekcija = db.collection('korisnici');
@@ -168,8 +151,7 @@ app.get('/korisnici', async (req, res) => {
 app.post('/korisnici', async (req, res) => {
 	let korisnik = req.body;
 	let id;
-	let result = 'Korisnik uspjesno registriran.';
-
+	let result = 'User registration successfull';
 	try {
 		id = await auth.registerUser(korisnik);
 	} catch (e) {
@@ -185,8 +167,8 @@ app.get('/:username', async (req, res) => {
 	try {
 		const korisnik = await db.collection('korisnici').findOne({ username: username });
 		if (korisnik) {
-			const { username, email } = korisnik;
-			res.json({ username, email });
+			const { username, email, imageUrl } = korisnik;
+			res.json({ username, email, imageUrl });
 		} else {
 			res.status(404).json({ error: 'Korisnik not found' });
 		}
