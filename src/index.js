@@ -84,6 +84,22 @@ app.get('/avatars', async (req, res) => {
 	}
 });
 
+app.get('/favourites/:username', async (req, res) => {
+	const db = await connect();
+
+	try {
+		const korisnik = await db.collection('korisnici').findOne({ username: req.params.username });
+		if (korisnik) {
+			const { favourites } = korisnik;
+			res.json({ favourites });
+		} else {
+			res.status(404).json({ error: 'Korisnik not found' });
+		}
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
 app.patch('/korisnici', [auth.verify], async (req, res) => {
 	let changes = req.body;
 
@@ -136,6 +152,25 @@ app.patch('/updateImage/:username', async (req, res) => {
 			});
 	} catch (error) {
 		res.status(500).json({ error: 'Invalid user id while changing image' });
+	}
+});
+
+app.patch('/favourite/:username', async (req, res) => {
+	const routeId = req.body.routeId;
+	const db = await connect();
+
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $addToSet: { favourites: routeId } })
+			.then((result) => {
+				res.status(200).json(result);
+			})
+			.catch((error) => {
+				res.status(500).json({ error: 'Cannot add route to favourites' });
+			});
+	} catch (err) {
+		res.status(500).json({ error: 'Invalid user id while adding route to favourites' });
 	}
 });
 

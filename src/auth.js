@@ -16,6 +16,7 @@ export default {
 			email: userData.email,
 			password: await bcrypt.hash(userData.password, 8),
 			imageUrl: userData.imageUrl,
+			favourites: userData.favourites,
 		};
 		try {
 			let result = await db.collection('korisnici').insertOne(doc);
