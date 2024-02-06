@@ -54,6 +54,25 @@ app.get('/rute/:id', async (req, res) => {
 	res.json(doc);
 });
 
+app.post('/addRoute', async (req, res) => {
+	let route = req.body;
+	let db = await connect();
+
+	try {
+		let result = await db
+			.collection('rute')
+			.insertOne(route)
+			.then((result) => {
+				res.status(200).json(result);
+			})
+			.catch((error) => {
+				res.status(500).json({ error: 'Cannot add route to collection' });
+			});
+	} catch (e) {
+		res.json({ error: e.message });
+	}
+});
+
 app.post('/auth', async (req, res) => {
 	let user = req.body;
 
@@ -171,6 +190,25 @@ app.patch('/favourite/:username', async (req, res) => {
 			});
 	} catch (err) {
 		res.status(500).json({ error: 'Invalid user id while adding route to favourites' });
+	}
+});
+
+app.patch('/removeFavourite/:username', async (req, res) => {
+	const routeId = req.body.routeId;
+	const db = await connect();
+
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $pull: { favourites: routeId } })
+			.then((result) => {
+				res.status(200).json(result);
+			})
+			.catch((error) => {
+				res.status(500).json({ error: 'Cannot remove route from favourites' });
+			});
+	} catch (err) {
+		res.status(500).json({ error: 'Invalid user id while removing route from favourites' });
 	}
 });
 
