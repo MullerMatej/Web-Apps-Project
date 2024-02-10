@@ -36,6 +36,30 @@ app.get('/tajna', [auth.verify], (req, res) => {
 	res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
 });
 
+app.patch('/rute/:routeId/addTag', async (req, res) => {
+	let updates = req.body;
+	let db = await connect();
+
+	try {
+		const routeId = req.params.routeId;
+		const newTag = updates.newTag;
+
+		const result = await db
+			.collection('rute')
+			.updateOne({ _id: new mongo.ObjectId(routeId) }, { $push: { communityTags: newTag } });
+
+		if (result.matchedCount === 0) {
+			res.status(404).json({ error: 'Route not found' });
+		} else if (result.modifiedCount === 1) {
+			res.status(201).json({ message: 'Tag added successfully' });
+		} else {
+			res.status(500).json({ error: 'Error when adding tag' });
+		}
+	} catch (e) {
+		res.status(500).json({ error: e.message });
+	}
+});
+
 app.get('/rute', async (req, res) => {
 	let db = await connect();
 
