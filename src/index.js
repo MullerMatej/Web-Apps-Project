@@ -36,6 +36,38 @@ app.get('/tajna', [auth.verify], (req, res) => {
 	res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
 });
 
+app.patch('/pointsOfInterest/:routeId', async (req, res) => {
+	let db = await connect();
+	let newPointOfInterest = req.body;
+	try {
+		const route = await db
+			.collection('rute')
+			.updateOne(
+				{ _id: new mongo.ObjectId(req.params.routeId) },
+				{ $push: { pointsOfInterest: newPointOfInterest } }
+			);
+
+		res.json({ msg: 'Added poi' });
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.get('/pointsOfInterest/:routeId', async (req, res) => {
+	let db = await connect();
+	try {
+		const route = await db.collection('rute').findOne({ _id: new mongo.ObjectId(req.params.routeId) });
+		if (route) {
+			const { pointsOfInterest } = route;
+			res.json({ pointsOfInterest });
+		} else {
+			res.status(404).json({ error: 'Route not found' });
+		}
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
 app.patch('/rute/:routeId/addTag', async (req, res) => {
 	let updates = req.body;
 	let db = await connect();
