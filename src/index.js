@@ -33,7 +33,58 @@ app.get('/', (req, res) => {
 });
 
 app.get('/tajna', [auth.verify], (req, res) => {
-	res.json({ message: `Ovo je tajna ${req.jtw.username}` }); // Mora bit razmak izmedu req i jwt iz nekog razloga
+	res.json({ message: `Ovo je tajna ${req.jtw.username}` });
+});
+
+app.get('/:userId/createdPoints', async (req, res) => {
+	let db = await connect();
+	try {
+		const user = await db.collection('korisnici').findOne({ _id: new mongo.ObjectId(req.params.userId) });
+
+		if (!user) {
+			return res.status(404).json({ error: 'User not found' });
+		}
+
+		const createdPoints = user.createdPoints;
+
+		res.json({ createdPoints });
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.get('/:userId/createdTags', async (req, res) => {
+	let db = await connect();
+	try {
+		const user = await db.collection('korisnici').findOne({ _id: new mongo.ObjectId(req.params.userId) });
+
+		if (!user) {
+			return res.status(404).json({ error: 'User not found' });
+		}
+
+		const createdTags = user.createdTags;
+
+		res.json({ createdTags });
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.get('/:userId/createdWalks', async (req, res) => {
+	let db = await connect();
+	try {
+		const user = await db.collection('korisnici').findOne({ _id: new mongo.ObjectId(req.params.userId) });
+
+		if (!user) {
+			return res.status(404).json({ error: 'User not found' });
+		}
+
+		const createdWalks = user.createdWalks;
+
+		res.json({ createdWalks });
+	} catch (error) {
+		res.status(500).json({ error: 'Internal server error' });
+	}
 });
 
 app.patch('/pointsOfInterest/:routeId', async (req, res) => {
@@ -296,8 +347,7 @@ app.get('/:username', async (req, res) => {
 	try {
 		const korisnik = await db.collection('korisnici').findOne({ username: username });
 		if (korisnik) {
-			const { username, email, imageUrl } = korisnik;
-			res.json({ username, email, imageUrl });
+			res.json(korisnik);
 		} else {
 			res.status(404).json({ error: 'Korisnik not found' });
 		}
