@@ -36,6 +36,18 @@ app.get('/tajna', [auth.verify], (req, res) => {
 	res.json({ message: `Ovo je tajna ${req.jtw.username}` });
 });
 
+app.patch('/:userId/addCreatedWalk', async (req, res) => {
+	let db = await connect();
+	let newRoute = req.body;
+	console.log('User id: ', req.params.userId, ' New route object: ', newRoute);
+	// Kada se ruta kreira, uspješno imam novokreirani routeId od te rute, routeName i username korisnika
+	// Nastaviti ovdje
+	// Kreiraj request koji dodaje objekt { routeId: "23534fwefefrefe545", name: "Lungomare" } u korisnikov createdWalks ključ
+	// Kada se doda automatski se prikazuje na /uploads kao novi v-row !
+	// Posljednje, kad se klikne na ikonu smeća, uzima se routeId tog smeća, i radi se deleteOne za taj routeId u rute kolekciji !
+	// Dalje napraviti istu stvar za tagove i points of interest (jednostavnije)
+});
+
 app.get('/:userId/createdPoints', async (req, res) => {
 	let db = await connect();
 	try {
@@ -164,20 +176,15 @@ app.get('/rute/:id', async (req, res) => {
 app.post('/addRoute', async (req, res) => {
 	let route = req.body;
 	let db = await connect();
+	let addedRoute;
 
 	try {
-		let result = await db
-			.collection('rute')
-			.insertOne(route)
-			.then((result) => {
-				res.status(200).json(result);
-			})
-			.catch((error) => {
-				res.status(500).json({ error: 'Cannot add route to collection' });
-			});
+		await db.collection('rute').insertOne(route);
+		addedRoute = await db.collection('rute').findOne({ name: route.name });
 	} catch (e) {
 		res.json({ error: e.message });
 	}
+	res.json({ newRoute: addedRoute });
 });
 
 app.post('/auth', async (req, res) => {
