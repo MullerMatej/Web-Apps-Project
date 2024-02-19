@@ -36,27 +36,104 @@ app.get('/tajna', [auth.verify], (req, res) => {
 	res.json({ message: `Ovo je tajna ${req.jtw.username}` });
 });
 
-app.patch('/:userId/addCreatedWalk', async (req, res) => {
+app.delete('/deleteCreatedWalk/:username/:walkId', async (req, res) => {
+	let db = await connect();
+
+	try {
+		const user = await db.collection('korisnici').findOne({ username: req.params.username });
+		if (!user) {
+			return res.status(404).json({ error: 'User not found' });
+		}
+		// Update the user document to remove the walk with the specified walkId
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $pull: { createdWalks: { routeId: req.params.walkId } } });
+
+		res.status(200).json({ message: 'Walk deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting walk:', error);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.delete('/deleteWalk/:walkId', async (req, res) => {
+	let db = await connect();
+	try {
+		await db.collection('rute').deleteOne({ _id: new mongo.ObjectId(req.params.walkId) });
+		res.status(200).json({ message: 'Walk deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting walk:', error);
+	}
+});
+
+app.patch('/:username/addCreatedPoint', async (req, res) => {
+	let db = await connect();
+	let newPoint = req.body;
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $push: { createdPoints: newPoint } });
+		res.status(200).json({ message: 'Point added successfully' });
+	} catch (error) {
+		console.error('Error adding point:', error);
+		if (error instanceof mongo.MongoError) {
+			res.status(500).json({ error: 'Database error: ' + error.message });
+		} else {
+			res.status(500).json({ error: 'Internal server error' });
+		}
+	}
+});
+
+app.patch('/:username/addCreatedTag', async (req, res) => {
+	let db = await connect();
+	let newTag = req.body;
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $push: { createdTags: newTag } });
+		res.status(200).json({ message: 'Tag added successfully' });
+	} catch (error) {
+		console.error('Error adding tag:', error);
+		if (error instanceof mongo.MongoError) {
+			res.status(500).json({ error: 'Database error: ' + error.message });
+		} else {
+			res.status(500).json({ error: 'Internal server error' });
+		}
+	}
+});
+
+app.patch('/:username/addCreatedWalk', async (req, res) => {
 	let db = await connect();
 	let newRoute = req.body;
-	console.log('User id: ', req.params.userId, ' New route object: ', newRoute);
+	// console.log('User id: ', req.params.userId, ' New route object: ', newRoute);
 	// Kada se ruta kreira, uspješno imam novokreirani routeId od te rute, routeName i username korisnika
 	// Nastaviti ovdje
 	// Kreiraj request koji dodaje objekt { routeId: "23534fwefefrefe545", name: "Lungomare" } u korisnikov createdWalks ključ
 	// Kada se doda automatski se prikazuje na /uploads kao novi v-row !
 	// Posljednje, kad se klikne na ikonu smeća, uzima se routeId tog smeća, i radi se deleteOne za taj routeId u rute kolekciji !
 	// Dalje napraviti istu stvar za tagove i points of interest (jednostavnije)
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $push: { createdWalks: newRoute } });
+		res.status(200).json({ message: 'Walk added successfully' });
+	} catch (error) {
+		console.error('Error adding walk:', error);
+		if (error instanceof mongo.MongoError) {
+			res.status(500).json({ error: 'Database error: ' + error.message });
+		} else {
+			res.status(500).json({ error: 'Internal server error' });
+		}
+	}
 });
 
 app.get('/:userId/createdPoints', async (req, res) => {
 	let db = await connect();
 	try {
 		const user = await db.collection('korisnici').findOne({ _id: new mongo.ObjectId(req.params.userId) });
-
 		if (!user) {
 			return res.status(404).json({ error: 'User not found' });
 		}
-
 		const createdPoints = user.createdPoints;
 
 		res.json({ createdPoints });
@@ -69,13 +146,10 @@ app.get('/:userId/createdTags', async (req, res) => {
 	let db = await connect();
 	try {
 		const user = await db.collection('korisnici').findOne({ _id: new mongo.ObjectId(req.params.userId) });
-
 		if (!user) {
 			return res.status(404).json({ error: 'User not found' });
 		}
-
 		const createdTags = user.createdTags;
-
 		res.json({ createdTags });
 	} catch (error) {
 		res.status(500).json({ error: 'Internal server error' });
