@@ -36,15 +36,39 @@ app.get('/tajna', [auth.verify], (req, res) => {
 	res.json({ message: `Ovo je tajna ${req.jtw.username}` });
 });
 
+app.patch('/deleteCreatedPoint/:username', async (req, res) => {
+	let db = await connect();
+	let pointName = req.body.name;
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $pull: { createdPoints: { name: pointName } } });
+
+		res.status(200).json({ message: 'Point deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting point:', error);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.patch('/deleteCreatedTag/:username', async (req, res) => {
+	let db = await connect();
+	let tagName = req.body.value;
+	try {
+		await db
+			.collection('korisnici')
+			.updateOne({ username: req.params.username }, { $pull: { createdTags: { value: tagName } } });
+
+		res.status(200).json({ message: 'Tag deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting tag:', error);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
 app.delete('/deleteCreatedWalk/:username/:walkId', async (req, res) => {
 	let db = await connect();
-
 	try {
-		const user = await db.collection('korisnici').findOne({ username: req.params.username });
-		if (!user) {
-			return res.status(404).json({ error: 'User not found' });
-		}
-		// Update the user document to remove the walk with the specified walkId
 		await db
 			.collection('korisnici')
 			.updateOne({ username: req.params.username }, { $pull: { createdWalks: { routeId: req.params.walkId } } });
@@ -53,6 +77,35 @@ app.delete('/deleteCreatedWalk/:username/:walkId', async (req, res) => {
 	} catch (error) {
 		console.error('Error deleting walk:', error);
 		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
+app.patch('/deletePoint/:walkId', async (req, res) => {
+	let db = await connect();
+	let point = req.body.name;
+	try {
+		await db
+			.collection('rute')
+			.updateOne(
+				{ _id: new mongo.ObjectId(req.params.walkId) },
+				{ $pull: { pointsOfInterest: { name: point } } }
+			);
+		res.status(200).json({ message: 'Point deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting point:', error);
+	}
+});
+
+app.patch('/deleteTag/:walkId', async (req, res) => {
+	let db = await connect();
+	let tag = req.body.value;
+	try {
+		await db
+			.collection('rute')
+			.updateOne({ _id: new mongo.ObjectId(req.params.walkId) }, { $pull: { communityTags: tag } });
+		res.status(200).json({ message: 'Tag deleted successfully' });
+	} catch (error) {
+		console.error('Error deleting tag:', error);
 	}
 });
 
