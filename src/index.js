@@ -15,9 +15,6 @@ mongoose.connect('mongodb+srv://admin:admin@clusternovi.oayb4ih.mongodb.net/walk
 	useUnifiedTopology: true,
 });
 
-// const connection = mongoose.connection;
-// connection.on('error', console.log);
-
 const app = express();
 const port = 3000;
 
@@ -27,7 +24,6 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(express.static('uploads'));
 
-// Handle the root path and serve the 'index.html' file
 app.get('/', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -158,13 +154,6 @@ app.patch('/:username/addCreatedTag', async (req, res) => {
 app.patch('/:username/addCreatedWalk', async (req, res) => {
 	let db = await connect();
 	let newRoute = req.body;
-	// console.log('User id: ', req.params.userId, ' New route object: ', newRoute);
-	// Kada se ruta kreira, uspješno imam novokreirani routeId od te rute, routeName i username korisnika
-	// Nastaviti ovdje
-	// Kreiraj request koji dodaje objekt { routeId: "23534fwefefrefe545", name: "Lungomare" } u korisnikov createdWalks ključ
-	// Kada se doda automatski se prikazuje na /uploads kao novi v-row !
-	// Posljednje, kad se klikne na ikonu smeća, uzima se routeId tog smeća, i radi se deleteOne za taj routeId u rute kolekciji !
-	// Dalje napraviti istu stvar za tagove i points of interest (jednostavnije)
 	try {
 		await db
 			.collection('korisnici')
@@ -261,11 +250,9 @@ app.get('/pointsOfInterest/:routeId', async (req, res) => {
 app.patch('/rute/:routeId/addTag', async (req, res) => {
 	let updates = req.body;
 	let db = await connect();
-
 	try {
 		const routeId = req.params.routeId;
 		const newTag = updates.newTag;
-
 		const result = await db
 			.collection('rute')
 			.updateOne({ _id: new mongo.ObjectId(routeId) }, { $push: { communityTags: newTag } });
@@ -284,19 +271,15 @@ app.patch('/rute/:routeId/addTag', async (req, res) => {
 
 app.get('/rute', async (req, res) => {
 	let db = await connect();
-
 	let cursor = await db.collection('rute').find();
-	let results = await cursor.toArray(); // Prodi kroz sve rezultate i stavi ih u array
-
+	let results = await cursor.toArray();
 	res.json(results);
 });
 
 app.get('/rute/:id', async (req, res) => {
 	let id = req.params.id;
 	let db = await connect();
-
 	let doc = await db.collection('rute').findOne({ _id: new mongo.ObjectId(id) });
-	// console.log(doc);
 	res.json(doc);
 });
 
@@ -316,7 +299,6 @@ app.post('/addRoute', async (req, res) => {
 
 app.post('/auth', async (req, res) => {
 	let user = req.body;
-
 	try {
 		let result = await auth.authenticateUser(user.username, user.password);
 		res.json(result);
@@ -327,13 +309,11 @@ app.post('/auth', async (req, res) => {
 
 app.get('/lokalniStorage', [auth.verify], async (req, res) => {
 	let username = req.jwt.username;
-
 	res.json(username);
 });
 
 app.get('/avatars', async (req, res) => {
 	let db = await connect();
-
 	try {
 		let cursor = await db.collection('avatars').find();
 		let results = await cursor.toArray();
