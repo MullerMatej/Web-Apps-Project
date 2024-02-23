@@ -5,15 +5,7 @@ import cors from 'cors';
 import mongo from 'mongodb';
 import auth from './auth.js';
 import connect from './db.js';
-import connectToDatabase from './db.js';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
 import mongoose from 'mongoose';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 mongoose.connect('mongodb+srv://admin:admin@clusternovi.oayb4ih.mongodb.net/walk_it', {
 	useNewUrlParser: true,
@@ -26,11 +18,11 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static('public'));
-app.use(express.static('uploads'));
-
-app.get('/', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.use(function (req, res, next) {
+	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
+	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content Type, Accept, Authorization');
+	next();
 });
 
 app.get('/tajna', [auth.verify], (req, res) => {
@@ -475,6 +467,6 @@ app.get('/:username', async (req, res) => {
 	}
 });
 
-app.listen(port, () => {
-	console.log(`Slusam na portu ${port}`);
+app.listen(process.env.PORT || port, () => {
+	console.log(`Slušam na portu ${port}`);
 });
