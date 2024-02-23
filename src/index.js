@@ -9,6 +9,11 @@ import connectToDatabase from './db.js';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import mongoose from 'mongoose';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 mongoose.connect('mongodb+srv://admin:admin@clusternovi.oayb4ih.mongodb.net/walk_it', {
 	useNewUrlParser: true,
