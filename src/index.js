@@ -340,10 +340,8 @@ app.get('/favourites/:username', async (req, res) => {
 app.patch('/korisnici', [auth.verify], async (req, res) => {
 	let changes = req.body;
 
-	let username = req.jtw.username;
-
 	if (changes.new_password && changes.old_password) {
-		let result = await auth.changeUserPassword(username, changes.old_password, changes.new_password);
+		let result = await auth.changeUserPassword(changes.username, changes.old_password, changes.new_password);
 		if (result) {
 			res.status(201).send();
 		} else {
